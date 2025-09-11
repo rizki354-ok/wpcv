@@ -1,0 +1,60 @@
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Baca gambar
+img_path = "apel.png"
+img = cv2.imread(img_path)
+b, g, r = cv2.split(img)
+
+# Grayscale dengan rumus luminosity
+grayscale = (0.299 * r + 0.587 * g + 0.114 * b).astype(np.uint8)
+
+# Fungsi untuk brightness adjustment
+def adjust_brightness(image, k=50):
+    """Tambah/kurangi brightness dengan nilai k."""
+    return np.clip(image.astype(np.int16) + k, 0, 255).astype(np.uint8)
+
+# Atur nilai k (bisa negatif -> lebih gelap, positif -> lebih terang)
+k_value = 100   # ubah sesuai kebutuhan
+brightness = adjust_brightness(grayscale, k=k_value)
+
+# Fungsi plotting histogram
+def plot_histogram(image, color='k', title='Histogram'):
+    plt.hist(image.ravel(), bins=256, range=(0, 256), color=color, alpha=0.7)
+    plt.title(title)
+    plt.xlabel("Pixel Intensity")
+    plt.ylabel("Frequency")
+
+# Plot hasil
+plt.figure(figsize=(14, 8))
+
+# 1. Citra asli + histogram
+plt.subplot(2, 4, 1)
+plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+plt.title("Citra Asli")
+plt.axis("off")
+
+plt.subplot(2, 4, 2)
+plot_histogram(img, color='k', title="Histogram Citra Asli")
+
+# 2. Grayscale (Luminosity) + histogram
+plt.subplot(2, 4, 3)
+plt.imshow(grayscale, cmap='gray')
+plt.title("Grayscale (Luminosity)")
+plt.axis("off")
+
+plt.subplot(2, 4, 4)
+plot_histogram(grayscale, color='gray', title="Histogram Grayscale")
+
+# 3. Brightness + histogram
+plt.subplot(2, 4, 5)
+plt.imshow(brightness, cmap='gray')
+plt.title(f"Brightness (k={k_value})")
+plt.axis("off")
+
+plt.subplot(2, 4, 6)
+plot_histogram(brightness, color='gray', title=f"Histogram Brightness (k={k_value})")
+
+plt.tight_layout()
+plt.show()
