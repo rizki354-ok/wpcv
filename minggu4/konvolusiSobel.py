@@ -1,48 +1,67 @@
+# Konvolusi dengan kernel sobel dengan gradien X dan Gradien Y untuk mendeteksi tepi
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
-# 1. Baca gambar & ubah ke grayscale
-img = cv2.imread("/home/rizki/wpcv/minggu4/bolaNew.png")
-grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# read a image
+img=cv2.cvtColor(cv2.imread("bola.png"), cv2.COLOR_BGR2GRAY)
 
-# 2. Kernel Sobel (3x3)
+# kernel sobel
+Gy = np.array([[-1,  0,  1],
+               [-2,  0,  2],
+               [-1,  0,  1]], dtype=float)
 Gx = np.array([[-1, -2, -1],
                [ 0,  0,  0],
                [ 1,  2,  1]], dtype=float)
 
-Gy = np.array([[-1,  0,  1],
-               [-2,  0,  2],
-               [-1,  0,  1]], dtype=float)
+# fungsi konvolusi dasar manual
+def convolution2d(image, kernel):
+    m, n = kernel.shape
+    y, x = image.shape
+    pad = m // 2
 
-# 3. Implementasi Sobel manual dengan sliding window 3x3
-def sobel_numpy(image):
-    h, w = image.shape
-    Rx = np.zeros_like(image, dtype=float)
-    Ry = np.zeros_like(image, dtype=float)
+    # menambahkan paddingdengan angka 0 agar hasil tepi bisa dihitung juga dan menambahkan variabel output yang menyimpan hasil konvolusi
+    paddingImg = np.pad(image, pad, mode='constant')
+    output = np.zeros_like(image, dtype=float)
 
-    # loop semua piksel kecuali border (karena kernel 3x3)
-    for i in range(1, h-1):
-        for j in range(1, w-1):
-            window = image[i-1:i+2, j-1:j+2].astype(float)
-            Rx[i, j] = np.sum(window * Gx)
-            Ry[i, j] = np.sum(window * Gy)
+    for i in range(y):
+        for j in range(x):
+            region = paddingImg[i:i+m, j:j+n]
+            output[i, j] = np.sum(region * kernel)
+    return output
 
-    magnitude = np.sqrt(Rx**2 + Ry**2)
-    return magnitude, Rx, Ry
+# konvolusi Sobel kernel for edge detection
+def convolutionSobel(image, Rx, Ry):
+    sobelX = convolution2d(image, Rx)    
+    sobelY = convolution2d(image, Ry)
+    magnitude = np.sqrt(sobelX**2 + sobelY**2)
+    magnitude = np.uint8(np.clip(magnitude, 0, 255))
 
-# 4. Jalankan sobel
-magnitude, Rx, Ry = sobel_numpy(grayscale)
+    return magnitude, sobelX, sobelY
 
-# 5. Clipping supaya muat ke 0–255
-clipped_mag = np.clip(magnitude, 0, 255).astype(np.uint8)
+SobelConvolution, Gx, Gy = convolutionSobel(img, Gx, Gy)
 
-# 6. Tampilkan hasil
-plt.figure(figsize=(15,6))
+# create window
+plt.figure()
 
-plt.subplot(1,1,1)
-plt.imshow(clipped_mag, cmap='gray')
-plt.title("Sobel Magnitude")
+plt.subplot(2, 2, 1)
+plt.imshow(img, cmap='gray')
+plt.title("gambar")
+plt.axis("off")
+
+plt.subplot(2, 2, 2)
+plt.imshow(SobelConvolution, cmap='gray')
+plt.title("hasil convolusi sobel")
+plt.axis("off")
+
+plt.subplot(2, 2, 3)
+plt.imshow(Gx, cmap='gray')
+plt.title("convolusi sobel gradien X")
+plt.axis("off")
+
+plt.subplot(2, 2, 4)
+plt.imshow(Gy, cmap='gray')
+plt.title("convolusi sobel gradien Y")
 plt.axis("off")
 
 plt.show()

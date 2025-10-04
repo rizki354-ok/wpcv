@@ -1,3 +1,5 @@
+# Dasar konvolusi dengan menggunakan matrix image buatan dan kernel buatan
+# dihitung dengan rumus dasar konvolusi
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,69 +24,50 @@ kernel = np.array([
     [0.2, 0.1, 0.4],
     [0.3, -0.1, -0.2]
 ], dtype=float)
-def convolution2d(image, kernel, normalize='sum'):
-    """
-    Convolve a 2D image with a kernel, then divide each sum by the kernel sum.
-    normalize: 'sum' -> divide by kernel.sum()
-               'abs' -> divide by np.abs(kernel).sum()
-               None  -> no normalization (divide by 1)
-    """
+
+# fungsi konvolusi manual
+def convolution2d(image, kernel):
     m, n = kernel.shape
-    if m != n or (m % 2) == 0:
-        warnings.warn("Fungsi ini mengasumsikan kernel persegi ganjil. Pastikan ukuran kernel ganjil.")
+    y, x = image.shape
     pad = m // 2
 
-    padded_img = np.pad(image, pad, mode='constant', constant_values=0)
-    y, x = image.shape
-    output = np.zeros_like(image, dtype=np.float32)
-
-    if normalize == 'sum':
-        denom = kernel.sum()
-    elif normalize == 'abs':
-        denom = np.abs(kernel).sum()
-    else:
-        denom = 1.0
-
-    if abs(denom) < 1e-12:
-        warnings.warn("Jumlah kernel hampir atau sama dengan nol. Menghindari pembagian nol -> tidak melakukan normalisasi.")
-        denom = 1.0
+    # menambahkan paddingdengan angka 0 agar hasil tepi bisa dihitung juga dan menambahkan variabel output yang menyimpan hasil konvolusi
+    paddingImg = np.pad(image, pad, mode='constant')
+    output = np.zeros_like(image)
 
     for i in range(y):
         for j in range(x):
-            region = padded_img[i:i+m, j:j+n]
-            conv_sum = np.sum(region * kernel)
-            output[i, j] = conv_sum / denom
-
+            region = paddingImg[i:i+m, j:j+n]
+            output[i, j] = np.sum(region * kernel)
     return output
-# --- Proses konvolusi ---
-output_matrix = convolution2d(image_matrix, kernel)
-channel_gambar = pd.DataFrame(image_matrix)
-channel_kernel = pd.DataFrame(kernel)
-channel_output = pd.DataFrame(output_matrix)
 
-with pd.ExcelWriter("hasil.xlsx") as writer:
-    channel_gambar.to_excel(writer, sheet_name="Matriks Gambar", index=False, header=False)
-    channel_kernel.to_excel(writer, sheet_name="Kernel", index=False, header=False)
-    channel_output.to_excel(writer, sheet_name="Hasil", index=False, header=False)
+# lakukan konvolusi
+convolusi_img = convolution2d(image_matrix, kernel)
 
-# --- Tampilkan hasil ---
-plt.figure(figsize=(10,4))
+# convert to csv
+channelGambar = pd.DataFrame(image_matrix)
+channelKernel = pd.DataFrame(kernel)
+channelHasil = pd.DataFrame(convolusi_img)
 
-# Gambar asli
-plt.subplot(1,2,1)
+with pd.ExcelWriter("hasilConvolusiDasar(custom konvolusi).xlsx") as writer:
+    channelGambar.to_excel(writer, sheet_name="Matriks Gambar", index=False, header=False)
+    channelKernel.to_excel(writer, sheet_name="Kernel", index=False, header=False)
+    channelHasil.to_excel(writer, sheet_name="Hasil", index=False, header=False)
+
+# full
+# plt.figure(figsize=(13.55, 6.7))
+# auto
+plt.figure()
+
+plt.subplot(1, 2, 1)
 plt.imshow(image_matrix, cmap="gray")
-plt.title("Citra Asli")
-plt.colorbar()
+plt.title("image_matrix (asli)")
+plt.axis("off")
 
-# Hasil konvolusi
-plt.subplot(1,2,2)
-plt.imshow(output_matrix, cmap="gray")
-plt.title("Hasil Konvolusi")
-plt.colorbar()
+plt.subplot(1, 2, 2)
+plt.imshow(convolusi_img, cmap="gray")
+plt.title("Konvolusi_image_matrix (Konvolusi)")
+plt.axis("off")
 
-print("Matriks citra:")
-print(image_matrix)
-print("\nKernel:")
-print(kernel)
-
+plt.tight_layout()
 plt.show()
